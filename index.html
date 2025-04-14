@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Paper Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .page {
+                margin: 0 !important;
+                box-shadow: none !important;
+            }
+            #page1 {
+                page-break-after: always;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 print:bg-white">
+    <div class="no-print fixed top-4 right-4 z-10">
+        <button id="printBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print Questions
+        </button>
+    </div>
+
+    <div id="app">
+        <div id="page1" class="page bg-white mx-auto my-4 p-8 shadow-md">
+            <div class="mb-6">
+                <div class="flex flex-col">
+                    <span class="font-semibold mb-4">Name:</span>
+                    <div class="border-b-2 border-gray-400 w-full mt-1"></div>
+                </div>
+            </div>
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold">Question 1</h1>
+            </div>
+            <div id="question1" class="question-content"></div>
+        </div>
+        
+        <div id="page2" class="page bg-white mx-auto my-4 p-8 shadow-md">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold">Question 2</h1>
+            </div>
+            <div id="question2" class="question-content"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Load questions from set 1
+                const response1 = await fetch('set-1/list.md');
+                const text1 = await response1.text();
+                const questions1 = text1.split('---').map(q => q.trim()).filter(q => q);
+                
+                // Load questions from set 2
+                const response2 = await fetch('set-2/list.md');
+                const text2 = await response2.text();
+                const questions2 = text2.split('---').map(q => q.trim()).filter(q => q);
+                
+                // Get random question from set 1
+                const randomQ1 = questions1[Math.floor(Math.random() * questions1.length)];
+                
+                // Get random question from set 2
+                const randomQ2 = questions2[Math.floor(Math.random() * questions2.length)];
+                
+                // Convert markdown to HTML and display
+                document.getElementById('question1').innerHTML = marked.parse(randomQ1);
+                document.getElementById('question2').innerHTML = marked.parse(randomQ2);
+                
+                // Style elements
+                document.querySelectorAll('pre code').forEach(block => {
+                    block.className = 'bg-gray-100 p-3 rounded my-2 block overflow-x-auto text-sm';
+                });
+                
+                document.querySelectorAll('.question-content h3').forEach(h3 => {
+                    h3.className = 'text-xl font-bold mb-3 text-blue-700';
+                });
+                
+                document.querySelectorAll('.question-content p').forEach(p => {
+                    p.className = 'my-2';
+                });
+                
+                document.querySelectorAll('.question-content strong').forEach(strong => {
+                    strong.className = 'font-bold';
+                });
+                
+                document.querySelectorAll('.question-content pre').forEach(pre => {
+                    pre.className = 'bg-gray-100 p-3 rounded my-3';
+                });
+                
+                // Print button functionality
+                document.getElementById('printBtn').addEventListener('click', function() {
+                    window.print();
+                });
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                document.body.innerHTML = `<div class="p-8 text-red-600">Error loading questions: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html> 
