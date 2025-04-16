@@ -23,8 +23,11 @@
             #page1 {
                 page-break-after: always;
             }
-            .no-print {
-                display: none;
+            .no-print, 
+            button, 
+            #printBtn, 
+            #refreshBtn {
+                display: none !important;
             }
         }
         .page {
@@ -33,15 +36,31 @@
             overflow: hidden;
             box-sizing: border-box;
         }
+        @media screen {
+            /* Only apply these styles when viewing on screen */
+            .page {
+                margin: 10mm auto;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 print:bg-white">
-    <div class="no-print fixed top-4 right-4 z-10">
-        <button id="printBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            Print Questions
+    <div class="no-print fixed top-4 right-4 z-10 flex flex-col">
+        <button id="printBtn" class="no-print w-64 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg mb-2 flex">
+            <div class="w-6 flex-shrink-0 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+            </div>
+            <span class="ml-2 text-center flex-grow">Print Questions</span>
+        </button>
+        <button id="refreshBtn" class="no-print w-64 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-lg flex">
+            <div class="w-6 flex-shrink-0 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </div>
+            <span class="ml-2 text-center flex-grow">Generate New Questions</span>
         </button>
     </div>
 
@@ -80,11 +99,42 @@
                 const text2 = await response2.text();
                 const questions2 = text2.split('---').map(q => q.trim()).filter(q => q);
                 
-                // Get random question from set 1
-                const randomQ1 = questions1[Math.floor(Math.random() * questions1.length)];
+                // Load previously selected questions from localStorage
+                let usedIndices1 = JSON.parse(localStorage.getItem('usedQuestionIndices1')) || [];
+                let usedIndices2 = JSON.parse(localStorage.getItem('usedQuestionIndices2')) || [];
                 
-                // Get random question from set 2
-                const randomQ2 = questions2[Math.floor(Math.random() * questions2.length)];
+                // Reset if all questions have been used
+                if (usedIndices1.length >= questions1.length) {
+                    usedIndices1 = [];
+                }
+                
+                if (usedIndices2.length >= questions2.length) {
+                    usedIndices2 = [];
+                }
+                
+                // Get random question from set 1 that hasn't been used yet
+                let randomIndex1;
+                do {
+                    randomIndex1 = Math.floor(Math.random() * questions1.length);
+                } while (usedIndices1.includes(randomIndex1));
+                
+                // Get random question from set 2 that hasn't been used yet
+                let randomIndex2;
+                do {
+                    randomIndex2 = Math.floor(Math.random() * questions2.length);
+                } while (usedIndices2.includes(randomIndex2));
+                
+                // Add selected indices to used arrays
+                usedIndices1.push(randomIndex1);
+                usedIndices2.push(randomIndex2);
+                
+                // Save used indices to localStorage
+                localStorage.setItem('usedQuestionIndices1', JSON.stringify(usedIndices1));
+                localStorage.setItem('usedQuestionIndices2', JSON.stringify(usedIndices2));
+                
+                // Get the questions using the selected indices
+                const randomQ1 = questions1[randomIndex1];
+                const randomQ2 = questions2[randomIndex2];
                 
                 // Convert markdown to HTML and display
                 document.getElementById('question1').innerHTML = marked.parse(randomQ1);
@@ -114,6 +164,11 @@
                 // Print button functionality
                 document.getElementById('printBtn').addEventListener('click', function() {
                     window.print();
+                });
+                
+                // Refresh button functionality
+                document.getElementById('refreshBtn').addEventListener('click', function() {
+                    window.location.reload();
                 });
             } catch (error) {
                 console.error('Error loading questions:', error);
